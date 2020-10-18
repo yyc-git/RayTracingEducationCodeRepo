@@ -1,0 +1,17 @@
+{
+    "name": "wonder-raytracing-education-code-repo",
+    "version": "0.0.1",
+    "description": "",
+    "homepage": "",
+    "license": "MIT",
+    "main": "",
+    "scripts": {
+        "watch": "bsb -clean-world -make-world -w",
+        "build": "bsb -clean-world -make-world"
+    },
+    "devDependencies": {
+        "bs-platform": "^8.2.0"
+    },
+    "dependencies": {
+    }
+}
