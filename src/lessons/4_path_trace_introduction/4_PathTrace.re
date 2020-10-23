@@ -4,7 +4,7 @@ module PathTracePass = {
       {isValid: false};
     } else if (isHit) {
       {
-        //miss
+        //hit
 
         isHit: true,
         radiance: evalByBRDFOrBSDF(ray, sceneBufferData),
