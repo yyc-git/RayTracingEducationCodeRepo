@@ -2,7 +2,7 @@ module PathTracePass = {
   let _traceRay = (ray, sceneInstancesContainer) =>
     if (!isValid(ray)) {
       {isValid: false};
-    } else if (isHit) {
+    } else if (isHit(ray, sceneInstancesContainer)) {
       {
         //hit
 
@@ -43,6 +43,7 @@ module PathTracePass = {
 
                     (
                       radiance,
+                      //sample ray
                       generateRay(
                         result.hitPosition,
                         result.scatterDirection,
@@ -52,6 +53,7 @@ module PathTracePass = {
                   (
                     false,
                     vec3(0.0, 0.0, 0.0),
+                    //generate ray from camera to pixel
                     generateRay(cameraPosition, cameraToPixelDirection),
                   ),
                 );
@@ -93,3 +95,5 @@ let inOneFrame = () => {
   AccumulationPass.execute();
   PostEffectPass.execute();
 };
+
+inOneFrame();
