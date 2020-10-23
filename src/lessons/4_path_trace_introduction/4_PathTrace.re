@@ -26,8 +26,6 @@ module PathTracePass = {
         let pixelColor =
           sampleCount->reduce(
             (pixelColor, _) => {
-              let ray = generateRayFromCameraToPixel();
-
               let (_, radiance, _) =
                 bounces->reduce(
                   ((isBreak, radiance, ray), _) => {
