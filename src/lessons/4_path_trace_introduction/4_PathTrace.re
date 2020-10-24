@@ -1,71 +1,65 @@
+open 4_Explain;
+
 module PathTracePass = {
   let _traceRay = (ray, sceneInstancesContainer) =>
     if (!isValid(ray)) {
       {isValid: false};
     } else if (isHit(ray, sceneInstancesContainer)) {
       {
-        //hit
+        //相交
 
         isHit: true,
-        radiance: evalByBRDFOrBSDF(ray, sceneBufferData),
-        hitPosition: compute(ray, sceneBufferData),
+        //now not consider about BSDF
+        radiance:
+          shadingByBRDF(ray, sceneBufferData) / computePDF(sceneBufferData),
+        hitPosition,
         scatterDirection: sample(ray, sceneBufferData),
       };
     } else {
       {
-        //miss
+        //丢失
 
         isHit: false,
-        radiance: getFromBackground(ray),
+        radiance: shadingFromBackground(ray),
       };
     };
 
   let execute = () => {
     screenAllPixels->reduce(
-      (pixelBuffer, pixelIndex) => {
-        let pixelColor =
-          sampleCount->reduce(
-            (pixelColor, _) => {
-              let (_, radiance, _) =
-                bounces->reduce(
-                  ((isBreak, radiance, ray), _) => {
-                    if (isBreak) {
-                      (isBreak, radiance, ray);
-                    };
+      (pixelBuffer, {pixelIndex}) => {
+        let (_, radiance, _) =
+          bounces->reduce(
+            ((isBreak, radiance, ray), _) => {
+              if (isBreak) {
+                (isBreak, radiance, ray);
+              };
 
-                    let result = _traceRay(ray, sceneInstancesContainer);
-                    radiance += result.radiance;
+              let result = _traceRay(ray, sceneInstancesContainer);
+              radiance += result.radiance;
 
-                    //break
-                    if (!result.isHit || !result.isValid) {
-                      (true, radiance, ray);
-                    };
+              //break
+              if (!result.isHit || !result.isValid) {
+                (true, radiance, ray);
+              };
 
-                    (
-                      radiance,
-                      //sample ray
-                      generateRay(
-                        result.hitPosition,
-                        result.scatterDirection,
-                      ),
-                    );
-                  },
-                  (
-                    false,
-                    vec3(0.0, 0.0, 0.0),
-                    //generate ray from camera to pixel
-                    generateRay(cameraPosition, cameraToPixelDirection),
-                  ),
-                );
-
-              pixelColor + radiance;
+              (
+                radiance,
+                //根据采样方向，生成新的射线
+                generateSampleRay(result.hitPosition, result.scatterDirection),
+              );
             },
-            vec3(0.0, 0.0, 0.0),
+            (
+              false,
+              //r,g,b
+              (0.0, 0.0, 0.0),
+              generateCameraRay(cameraPosition, cameraToPixelDirection),
+            ),
           );
 
-        pixelBuffer[pixelIndex] = pixelColor;
+        //像素颜色的alpha为1.0
+        pixelBuffer[pixelIndex] = (radiance, 1.0);
       },
-      emptyPixelBufferUploadFromCPU(),
+      emptyPixelBufferUploadFromCPU,
     );
   };
 };
@@ -74,26 +68,16 @@ module AccumulationPass = {
   let execute = () => {
     screenAllPixels->forEach(
       _ => {
-        (addAllPixelColorFromPixelBuffer(pixelBuffer) / totalSampleCount)
-        ->output
+        (addAllPixelColorFromPixelBuffer(pixelBuffer) / totalSampleCount) -> output
       },
       (),
     );
   };
 };
 
-module PostEffectPass = {
-  let execute = () => {
-    screenAllPixels->forEach(outputPixelColor => {
-      outputPixelColor->gammaCorrection->output
-    });
-  };
-};
-
 let inOneFrame = () => {
   PathTracePass.execute();
   AccumulationPass.execute();
-  PostEffectPass.execute();
 };
 
 inOneFrame();
