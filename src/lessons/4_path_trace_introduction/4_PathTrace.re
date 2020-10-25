@@ -1,26 +1,30 @@
-open 4_Explain;
-
 module PathTracePass = {
   let _traceRay = (ray, sceneInstancesContainer) =>
     if (!isValid(ray)) {
       {isValid: false};
-    } else if (isHit(ray, sceneInstancesContainer)) {
-      {
-        //相交
-
-        isHit: true,
-        //now not consider about BSDF
-        radiance:
-          shadingByBRDF(ray, sceneBufferData) / computePDF(sceneBufferData),
-        hitPosition,
-        scatterDirection: sample(ray, sceneBufferData),
-      };
     } else {
-      {
-        //丢失
+      let result = intersect(ray, sceneInstancesContainer);
 
-        isHit: false,
-        radiance: shadingFromBackground(ray),
+      if (result.isHit) {
+        {
+          //相交
+
+          isValid: true,
+          isHit: true,
+          radiance:
+            shadingByBRDF(ray, result.hitShadingData, sceneBufferData)
+            / computePDF(sceneBufferData),
+          hitPosition,
+          scatterDirection: sample(ray, sceneBufferData),
+        };
+      } else {
+        {
+          //丢失
+
+          isValid: true,
+          isHit: false,
+          radiance: shadingFromBackground(ray),
+        };
       };
     };
 
@@ -37,7 +41,7 @@ module PathTracePass = {
               let result = _traceRay(ray, sceneInstancesContainer);
               radiance += result.radiance;
 
-              //break
+              //退出bounce
               if (!result.isHit || !result.isValid) {
                 (true, radiance, ray);
               };
@@ -45,7 +49,10 @@ module PathTracePass = {
               (
                 radiance,
                 //根据采样方向，生成新的射线
-                generateSampleRay(result.hitPosition, result.scatterDirection),
+                generateSampleRay(
+                  result.hitPosition,
+                  result.scatterDirection,
+                ),
               );
             },
             (
@@ -68,7 +75,8 @@ module AccumulationPass = {
   let execute = () => {
     screenAllPixels->forEach(
       _ => {
-        (addAllPixelColorFromPixelBuffer(pixelBuffer) / totalSampleCount) -> output
+        (addAllPixelColorFromPixelBuffer(pixelBuffer) / totalSampleCount)
+        ->output
       },
       (),
     );
