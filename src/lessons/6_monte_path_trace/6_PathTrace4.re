@@ -1,5 +1,6 @@
-let rec shade = (p, wo) => {
-  let P_RR = defineProbability();
+
+//P_RR = defineProbability();
+let rec shade = (P_RR, p, wo) => {
   let ksi = random();
 
   if (ksi > P_RR) {
