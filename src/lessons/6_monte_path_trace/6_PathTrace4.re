@@ -6,7 +6,7 @@ let rec shade = (P_RR, p, wo) => {
   if (ksi > P_RR) {
     (0.0, 0.0, 0.0);
   } else {
-    //在半球面面随机均匀采样1个方向
+    //在半球面随机均匀采样1个方向
     let wi = sample(ray, sceneInstancesContainer);
 
     let result = _traceRay(generateSampleRay(p, wi));

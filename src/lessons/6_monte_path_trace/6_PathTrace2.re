@@ -1,5 +1,5 @@
 let rec shade = (p, wo) => {
-  //在半球面面均匀采样N个方向
+  //在半球面均匀采样N个方向
   let scatterDirections = sampleN(ray, sceneInstancesContainer);
 
   scatterDirections->reduce(

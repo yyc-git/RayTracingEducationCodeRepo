@@ -2,19 +2,34 @@ module PathTracePass = {
   let _traceRay = (ray, sceneInstancesContainer) =>
     intersect(ray, sceneInstancesContainer);
 
-  let rec shade = (p, wo) => {
-    //在半球面随机均匀采样1个方向
-    let wi = sample(ray, sceneInstancesContainer);
+  //P_RR = defineProbability();
+  let rec shade = (P_RR, p, wo) => {
+    let L_dir =
+      if (isVisible(result.hitPosition, p)) {
+        L_i * f_r * cosθ * cosθ' / |result.hitPosition, p|^2 / pdf_light
+      } else {
+        0.0;
+      };
 
-    let result = _traceRay(generateSampleRay(p, wi));
+    let ksi = random();
 
-    if (isHitLight(result)) {
-      L_i * f_r * cosine / pdf(wi);
-    } else if (isHitObject(result)) {
-      shade(result.hitPosition, wi) * f_r * cosine / pdf(wi);
-    } else {
-      backgroudColor;
-    };
+    let L_indir =
+      if (ksi > P_RR) {
+        (0.0, 0.0, 0.0);
+      } else {
+        //在半球面随机均匀采样1个方向
+        let wi = sample(ray, sceneInstancesContainer);
+
+        let result = _traceRay(generateSampleRay(p, wi));
+
+        if (isHitObject(result)) {
+          shade(result.hitPosition, -wi) * f_r * cosθ / pdf(wi) / P_RR;
+        } else {
+          backgroudColor / P_RR;
+        };
+      };
+
+    L_dir + L_indir;
   };
 
   let execute = () => {
