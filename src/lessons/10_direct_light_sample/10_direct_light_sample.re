@@ -2,10 +2,12 @@ module PathTracePass = {
   let _traceRay = (ray, sceneInstancesContainer) =>
     intersect(ray, sceneInstancesContainer);
 
-  let rec shade = (P_RR, p, p', p'', wo) => {
+  let rec shade = (P_RR, p, p', wo) => {
+    let p'' = getLightPosition();
+
     let L_dir =
       if (isVisible(p', p'')) {
-        L_e(p', p'') * f_r(p, p', p'') * cosθ * cosθ' / |p'' - p'|^2 / pdf(p'')
+        f_r(p, p', p'') * L_e(p', p'') * cosθ * cosθ' / |p'' - p'|^2 / pdf(p'')
       } else {
         0.0;
       };
@@ -24,7 +26,7 @@ module PathTracePass = {
         //这里不需要再对光源进行着色计算了
 
         if (isHitObject(result)) {
-          shade(P_RR, p', result.hitPosition, p'', -wi) * f_r(p', wi, wo) * cosθ / pdf(wi) / P_RR;
+          f_r(p', wi, wo) * shade(P_RR, p', result.hitPosition, -wi) * cosθ / pdf(wi) / P_RR;
         } else {
           backgroudColor / P_RR;
         };
@@ -45,7 +47,7 @@ module PathTracePass = {
           );
 
         if (result.isHit) {
-          radiance = shade(defineProbability(), cameraPosition, result.hitPosition, lightPosition, cameraToPixelDirection);
+          radiance = shade(defineProbability(), cameraPosition, result.hitPosition, cameraToPixelDirection);
         } else {
           radiance = backgroudColor;
         };
